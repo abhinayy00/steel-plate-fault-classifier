@@ -72,22 +72,34 @@ def _safe_auc(pipeline, X, y_true, class_order, multiclass):
     present = set(np.unique(np.asarray(y_true)))
     if len(present) < 2:
         return None
+
+    # scikit-learn does NOT raise when a class named in `labels` is missing from
+    # y_true: that class's one-vs-rest score becomes NaN and the macro average
+    # propagates it silently. Verified on the pinned 1.9.1 - a test file missing a
+    # single rare class returned nan, which then rendered as the literal string
+    # "nan" in the UI. Catching ValueError alone is not enough.
+    if multiclass and not set(class_order).issubset(present):
+        return None
+
     try:
         proba = pipeline.predict_proba(X)
         if multiclass:
             # labels= pins the column order of `proba` to class_order. Without it,
             # a subset missing a class silently misaligns columns and the score is
             # wrong rather than absent.
-            return float(
+            score = float(
                 roc_auc_score(
                     y_true, proba, multi_class="ovr", average="macro", labels=class_order
                 )
             )
-        pos_idx = list(pipeline.classes_).index(class_order[-1])
-        return float(roc_auc_score(y_true, proba[:, pos_idx]))
+        else:
+            pos_idx = list(pipeline.classes_).index(class_order[-1])
+            score = float(roc_auc_score(y_true, proba[:, pos_idx]))
     except ValueError:
-        # Raised when a class in class_order is absent from y_true.
         return None
+    # Belt and braces: NaN can still arrive by other routes (e.g. a degenerate
+    # binary column), and NaN is never a meaningful AUC.
+    return None if score != score else score
 
 
 def confusion_frame(pipeline, X, y_true, class_order):
@@ -103,8 +115,15 @@ def confusion_frame(pipeline, X, y_true, class_order):
 
 
 def format_metric(value):
-    """Render a metric for display, distinguishing 'not computable' from zero."""
-    return "n/a" if value is None else f"{value:.4f}"
+    """Render a metric for display, distinguishing 'not computable' from zero.
+
+    Handles NaN as well as None: putting a column of None into a DataFrame (as the
+    comparison tab does) converts them to float NaN, which would otherwise print as
+    the literal string "nan".
+    """
+    if value is None or (isinstance(value, float) and value != value):
+        return "n/a"
+    return f"{value:.4f}"
 
 
 def markdown_table(df, floatfmt="{:.4f}"):

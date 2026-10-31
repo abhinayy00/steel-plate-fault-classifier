@@ -23,7 +23,7 @@ from sklearn.exceptions import InconsistentVersionWarning
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
-from src.evaluate import METRIC_ORDER, compute_metrics  # noqa: E402
+from src.evaluate import METRIC_ORDER, compute_metrics, format_metric  # noqa: E402
 
 failures = []
 
@@ -47,14 +47,17 @@ def main():
         check(f"{label}: artifact present", path.exists())
         if not path.exists():
             continue
+        mismatch = False
         with warnings.catch_warnings():
             warnings.simplefilter("error", InconsistentVersionWarning)
             try:
                 pipe = joblib.load(path)
-                mismatch = False
             except InconsistentVersionWarning:
-                pipe = joblib.load(path)
                 mismatch = True
+        if mismatch:
+            # Outside the block, so the "error" filter is no longer active and this
+            # load warns instead of raising again.
+            pipe = joblib.load(path)
         check(f"{label}: no library version mismatch", not mismatch)
         check(f"{label}: exposes predict_proba", hasattr(pipe, "predict_proba"))
         check(f"{label}: artifact under 25 MB", path.stat().st_size < 25 * 1024**2)
@@ -79,6 +82,30 @@ def main():
     check("single-class subset returns AUC=None rather than raising", res["AUC"] is None)
     check("single-class subset still returns the other five metrics",
           all(res[m] is not None for m in METRIC_ORDER if m != "AUC"))
+
+    # Regression: scikit-learn returns NaN (it does NOT raise) when a class named in
+    # labels= is absent from y_true, and NaN rendered as the literal string "nan".
+    rare = min(classes, key=lambda c: (test[meta["target_column"]] == c).sum())
+    subset = test[test[meta["target_column"]] != rare]
+    res2 = compute_metrics(pipe, subset[meta["feature_order"]],
+                           subset[meta["target_column"]], classes)
+    check(f"subset missing '{rare}' yields AUC=None, not NaN",
+          res2["AUC"] is None, f"got {res2['AUC']!r}")
+    check("that AUC renders as 'n/a' rather than 'nan'",
+          format_metric(res2["AUC"]) == "n/a", f"got {format_metric(res2['AUC'])!r}")
+    check("the other five metrics survive a missing class",
+          all(res2[m] is not None for m in METRIC_ORDER if m != "AUC"))
+
+    # Regression: NaN arriving via DataFrame construction must also render as n/a.
+    check("format_metric renders NaN as 'n/a'", format_metric(float("nan")) == "n/a")
+    check("format_metric renders None as 'n/a'", format_metric(None) == "n/a")
+
+    # Regression: unparseable uploads must be caught before any schema check.
+    app_src = (ROOT / "app.py").read_text(encoding="utf-8")
+    check("app.py handles EmptyDataError on upload", "EmptyDataError" in app_src)
+    check("app.py handles a non-UTF-8 upload", "UnicodeDecodeError" in app_src)
+    check("app.py retries a version-mismatched load outside catch_warnings",
+          "return joblib.load(MODEL_DIR / filename), note" in app_src)
 
     print("\n[4] repo completeness")
     for rel in ["app.py", "requirements.txt", "README.md", "test_data.csv",

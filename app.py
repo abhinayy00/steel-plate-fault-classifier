@@ -50,20 +50,43 @@ def load_model(filename):
     may then score incorrectly in silence. Escalating it to an error turns an
     invisible wrong-answer failure into a visible one.
     """
+    note = None
     with warnings.catch_warnings():
         warnings.simplefilter("error", InconsistentVersionWarning)
         try:
             return joblib.load(MODEL_DIR / filename), None
         except InconsistentVersionWarning as exc:
-            model = joblib.load(MODEL_DIR / filename)
-            return model, str(exc)
+            note = str(exc)
+    # Retry OUTSIDE the context manager. Inside it the "error" filter is still
+    # active, so the second load would raise again and escape as a full-page
+    # traceback - defeating the point of catching it.
+    return joblib.load(MODEL_DIR / filename), note
 
 
 @st.cache_data(show_spinner=False)
 def read_csv_bytes(raw: bytes):
+    """Parse an uploaded CSV. Returns (DataFrame, None) or (None, message).
+
+    pandas raises before any schema check can run, so without this the obvious bad
+    uploads - an empty file, a UTF-16 export from Excel - produce a raw traceback
+    and the session is dead.
+
+    Encoding order matters: cp1252 decodes almost any byte sequence, so trying it
+    before utf-16 turns a UTF-16 file into garbage column names and the user gets a
+    baffling "missing 27 columns" instead of a decode message.
+    """
     import io
 
-    return pd.read_csv(io.BytesIO(raw))
+    for encoding in ("utf-8", "utf-16", "cp1252"):
+        try:
+            return pd.read_csv(io.BytesIO(raw), encoding=encoding), None
+        except (UnicodeDecodeError, UnicodeError):
+            continue
+        except pd.errors.EmptyDataError:
+            return None, "The file is empty - there is no header row to parse."
+        except pd.errors.ParserError as exc:
+            return None, f"The file is not valid CSV: {exc}"
+    return None, "Could not decode the file as text. Re-save it as UTF-8 CSV and try again."
 
 
 def _blue_scale(frame):
@@ -173,13 +196,17 @@ st.caption(
 )
 
 if upload is not None:
-    df = read_csv_bytes(upload.getvalue())
+    df, read_error = read_csv_bytes(upload.getvalue())
     source = f"uploaded file `{upload.name}`"
 elif use_bundled and BUNDLED_TEST.exists():
-    df = read_csv_bytes(BUNDLED_TEST.read_bytes())
+    df, read_error = read_csv_bytes(BUNDLED_TEST.read_bytes())
     source = "bundled `test_data.csv`"
 else:
     st.info("Upload a test CSV from the sidebar, or switch on the bundled test set.")
+    st.stop()
+
+if read_error:
+    st.error(read_error)
     st.stop()
 
 problems = check_schema(df, meta)
