@@ -66,6 +66,32 @@ def read_csv_bytes(raw: bytes):
     return pd.read_csv(io.BytesIO(raw))
 
 
+def _blue_scale(frame):
+    """Shade a confusion matrix from white to blue, without matplotlib.
+
+    pandas' own Styler.background_gradient(cmap=...) resolves the colormap through
+    matplotlib, which is an optional pandas dependency. It is present in most dev
+    environments and absent from a minimal deployment, so the call works locally and
+    raises ModuleNotFoundError once deployed. Interpolating the colour here keeps the
+    deployed dependency set to the six packages in requirements.txt.
+    """
+    import numpy as np
+
+    values = frame.to_numpy(dtype=float)
+    top = values.max() if values.size and values.max() > 0 else 1.0
+    styles = []
+    for row in values:
+        out = []
+        for v in row:
+            # sqrt so the long tail of small off-diagonal counts stays visible
+            t = float(np.sqrt(max(v, 0.0) / top))
+            r, g, b = int(255 - 158 * t), int(255 - 93 * t), int(255 - 28 * t)
+            fg = "#ffffff" if t > 0.6 else "#262730"
+            out.append(f"background-color: rgb({r},{g},{b}); color: {fg}")
+        styles.append(out)
+    return pd.DataFrame(styles, index=frame.index, columns=frame.columns)
+
+
 def check_schema(df, meta):
     """Collect EVERY schema problem at once.
 
@@ -204,8 +230,7 @@ with tab_single:
     with left:
         st.markdown("**Confusion matrix** — rows are true, columns predicted")
         cm = confusion_frame(model, X, y, CLASSES)
-        st.dataframe(cm.style.background_gradient(cmap="Blues", axis=None),
-                     use_container_width=True)
+        st.dataframe(cm.style.apply(_blue_scale, axis=None), use_container_width=True)
     with right:
         st.markdown("**Classification report**")
         rep = classification_report(
