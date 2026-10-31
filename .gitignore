@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Archives and scratch
+*.zip
+*.log
+
+# ---------------------------------------------------------------------------
+# Explicit negations. Stock Python/data-science .gitignore templates exclude
+# *.pkl, model/ and data/ wholesale, which would silently drop the artifacts the
+# assignment grades. These files MUST be committed.
+# ---------------------------------------------------------------------------
+!model/
+!model/*.joblib
+!model/metadata.json
+!test_data.csv
+!data/*.csv
+!data/*.json
+!reports/
