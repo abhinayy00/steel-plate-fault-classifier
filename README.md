@@ -3,7 +3,7 @@
 A comparison of five supervised classifiers on the UCI *Steel Plates Faults* dataset,
 with a Streamlit front-end that scores an uploaded test CSV against the saved models.
 
-- **Live app:** https://<your-app>.streamlit.app
+- **Live app:** https://steel-plate-fault-classifier-abhinay-y.streamlit.app
 - **Repository:** https://github.com/abhinayy00/steel-plate-fault-classifier
 
 ---

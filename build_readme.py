@@ -20,7 +20,7 @@ sys.path.insert(0, str(ROOT))
 from src.evaluate import METRIC_ORDER, markdown_table  # noqa: E402
 
 REPO_URL = "https://github.com/abhinayy00/steel-plate-fault-classifier"
-APP_URL = "https://<your-app>.streamlit.app"
+APP_URL = "https://steel-plate-fault-classifier-abhinay-y.streamlit.app"
 
 
 def main():
