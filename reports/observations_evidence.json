@@ -1,0 +1,88 @@
+{
+  "knn_k_sweep": {
+    "3": 0.7678,
+    "5": 0.7631,
+    "7": 0.7705,
+    "9": 0.7668,
+    "11": 0.7509,
+    "15": 0.7384,
+    "21": 0.7106
+  },
+  "models": {
+    "Logistic Regression": {
+      "fit_seconds": 0.1,
+      "score_seconds": 0.025,
+      "artifact_kb": 4.0,
+      "per_class_recall": {
+        "Bumps": 0.6033057851239669,
+        "Dirtiness": 0.5882352941176471,
+        "K_Scratch": 0.9401709401709402,
+        "Other_Faults": 0.6138613861386139,
+        "Pastry": 0.46808510638297873,
+        "Stains": 0.9090909090909091,
+        "Z_Scratch": 0.8596491228070176
+      },
+      "n_predicted_classes": 7
+    },
+    "Decision Tree": {
+      "fit_seconds": 0.016,
+      "score_seconds": 0.023,
+      "artifact_kb": 6.3,
+      "per_class_recall": {
+        "Bumps": 0.512396694214876,
+        "Dirtiness": 0.7058823529411765,
+        "K_Scratch": 0.9230769230769231,
+        "Other_Faults": 0.6336633663366337,
+        "Pastry": 0.46808510638297873,
+        "Stains": 0.9090909090909091,
+        "Z_Scratch": 0.8245614035087719
+      },
+      "n_predicted_classes": 7
+    },
+    "K-Nearest Neighbors": {
+      "fit_seconds": 0.006,
+      "score_seconds": 0.089,
+      "artifact_kb": 177.7,
+      "per_class_recall": {
+        "Bumps": 0.6859504132231405,
+        "Dirtiness": 0.7647058823529411,
+        "K_Scratch": 0.9487179487179487,
+        "Other_Faults": 0.599009900990099,
+        "Pastry": 0.3617021276595745,
+        "Stains": 0.9545454545454546,
+        "Z_Scratch": 0.8947368421052632
+      },
+      "n_predicted_classes": 7
+    },
+    "Naive Bayes (Gaussian)": {
+      "fit_seconds": 0.007,
+      "score_seconds": 0.065,
+      "artifact_kb": 5.3,
+      "per_class_recall": {
+        "Bumps": 0.8347107438016529,
+        "Dirtiness": 0.6470588235294118,
+        "K_Scratch": 0.905982905982906,
+        "Other_Faults": 0.21287128712871287,
+        "Pastry": 0.574468085106383,
+        "Stains": 0.9545454545454546,
+        "Z_Scratch": 0.5789473684210527
+      },
+      "n_predicted_classes": 7
+    },
+    "Support Vector Machine": {
+      "fit_seconds": 0.192,
+      "score_seconds": 0.088,
+      "artifact_kb": 136.4,
+      "per_class_recall": {
+        "Bumps": 0.71900826446281,
+        "Dirtiness": 0.5882352941176471,
+        "K_Scratch": 0.9316239316239316,
+        "Other_Faults": 0.6831683168316832,
+        "Pastry": 0.2978723404255319,
+        "Stains": 0.9545454545454546,
+        "Z_Scratch": 0.8596491228070176
+      },
+      "n_predicted_classes": 7
+    }
+  }
+}
