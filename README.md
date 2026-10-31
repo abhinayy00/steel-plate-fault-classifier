@@ -179,7 +179,12 @@ comparing the training and runtime versions.
 
 ## g. BITS Virtual Lab execution
 
-See `reports/screenshots/bits_lab_execution.png`.
+`train_models.py` was run inside the BITS Virtual Lab (Prayogshala), on host
+`ip-10-3-19-72` as user `s2026aj05465`, under Python 3.12.7 with scikit-learn
+1.9.1. All five models trained there and printed the same six metrics
+shown in the comparison table above, matching to four decimal places.
+
+![Training all five models on the BITS Virtual Lab](reports/screenshots/bits_lab_execution.png)
 
 ## h. References
 
